@@ -1,0 +1,31 @@
+import wave
+import numpy as np
+import os
+def analyze_lsb(audio_file):
+    # Проверяем, существует ли файл
+    if not os.path.exists(audio_file):
+        print(f"Ошибка: Файл '{audio_file}' не найден!")
+        return
+    try:
+        # Открываем WAV файл
+        with wave.open(audio_file, "rb") as wav_file:
+            frames = wav_file.readframes(wav_file.getnframes())  # Читаем все кадры
+            samples = np.frombuffer(frames, dtype=np.int16)  # Преобразуем в числовой массив
+        # Получаем наименее значимые биты (LSB)
+        lsb_values = samples & 1
+        # Подсчитываем количество 1 и 0
+        ones_count = np.sum(lsb_values)
+        zeros_count = len(lsb_values) - ones_count
+        ratio = ones_count / len(lsb_values)
+        print(f"LSB 1 саны: {ones_count}")
+        print(f"LSB 0 саны: {zeros_count}")
+        print(f"1-биттердің пропорциясы: {ratio:.5f}")
+        # Оценка наличия скрытых данных
+        if 0.45 < ratio < 0.55:print("Aудиофайлда стеганографиялық ақпарат жоқ.")
+        else:print("Назар аударыңыз! Аудиофайлда жасырын ақпарат болуы мүмкін!")
+    except wave.Error as e:
+        print(f"Қате: Файл '{audio_file}' дұрыс WAV форматына сәйкес келмейді. {e}")
+# Указываем путь к файлу
+audio_file_path = r"C:\Users\Didar\PyCharmMiscProject\Didar.wav"
+# Запускаем анализ
+analyze_lsb(audio_file_path)
