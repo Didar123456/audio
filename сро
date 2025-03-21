@@ -1,0 +1,62 @@
+# Қажетті кітапханаларды импорттау
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+# Негізгі (қалыпты) және стеганографиялық суреттер
+original_image = "normal.jpg"
+stego_image = "stego.jpg"
+
+# Файлдардың бар-жоғын тексеру
+if not os.path.exists(original_image):
+    print(f"Қате: {original_image} файлы табылмады!")
+elif not os.path.exists(stego_image):
+    print(f"Қате: {stego_image} файлы табылмады!")
+else:
+    print(f"Қалыпты кескін: {original_image}")
+    print(f"Стеганографиялық кескін: {stego_image}")
+
+    # Гистограмма есептеу функциясы
+    def calculate_histogram(image_path):
+        """JPEG кескіні үшін гистограмма есептеу"""
+        image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)  # Суретті сұр түске ауыстыру
+        if image is None:
+            print(f"Қате: {image_path} файлы ашылмады!")
+            return None
+        hist = cv2.calcHist([image], [0], None, [256], [0, 256])
+        return hist
+
+    # Гистограммаларды салыстыру функциясы
+    def compare_histograms(hist1, hist2):
+        """Екі гистограмма арасындағы айырмашылықты есептеу"""
+        if hist1 is None or hist2 is None:
+            return None
+        diff = np.abs(hist1 - hist2)
+        return np.sum(diff)
+
+    # Гистограммаларды есептеу
+    hist_normal = calculate_histogram(original_image)
+    hist_stego = calculate_histogram(stego_image)
+
+    # Айырмашылықты есептеу
+    difference = compare_histograms(hist_normal, hist_stego)
+
+    if difference is not None:
+        print(f"\nГистограмма айырмашылығы: {difference}")
+
+        # Стеганографияны анықтау критерийі
+        if difference > 3000:
+            print("Мүмкін JSteg арқылы жасырылған ақпарат бар!")
+        else:
+            print("Кескінде JSteg белгілері анықталған жоқ.")
+
+        # Гистограммаларды салыстыру графигі
+        plt.figure(figsize=(10, 5))
+        plt.plot(hist_normal, color='blue', label="Қалыпты сурет")
+        plt.plot(hist_stego, color='red', linestyle='dashed', label="Стеганографиялық сурет")
+        plt.title("JSteg әдісін анықтауға арналған гистограммалық талдау")
+        plt.xlabel("Пиксель мәні")
+        plt.ylabel("Пиксель саны")
+        plt.legend()
+        plt.show()
