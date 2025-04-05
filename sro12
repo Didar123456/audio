@@ -1,0 +1,101 @@
+import tkinter as tk
+from tkinter import filedialog
+# Сызықтық әдіс (бос орынмен кодтау)
+def encode_whitespace(text, watermark):
+    words = text.split()
+    if not words:
+        raise ValueError("Мәтінде сөз жоқ. Файл бос немесе тек бос орындар бар.")
+    max_bits = len(words) - 1
+    watermark = watermark[:max_bits]
+    encoded = []
+    for i, word in enumerate(words[:-1]):
+        if i < len(watermark):
+            space = ' ' if watermark[i] == '0' else '  '
+            encoded.append(word + space)
+        else:
+            encoded.append(word + ' ')
+    encoded.append(words[-1])
+    return ''.join(encoded)
+def decode_whitespace(encoded_text):
+    parts = encoded_text.split(' ')
+    bits = []
+    i = 0
+    while i < len(parts) - 1:
+        if parts[i] == '':
+            bits.append('1')
+            i += 2
+        else:
+            bits.append('0')
+            i += 1
+    return ''.join(bits)
+# Zero-width әдісі (Unicode таңбалар)
+def encode_zerowidth(text, watermark):
+    zero = '\u200B'
+    one = '\u200C'
+    words = text.split()
+    if not words:
+        raise ValueError("Мәтінде сөз жоқ. Файл бос немесе тек бос орындар бар.")
+    watermark = watermark[:len(words)]
+    encoded = []
+    for i in range(len(watermark)):
+        zw_char = zero if watermark[i] == '0' else one
+        encoded.append(words[i] + zw_char)
+    encoded.extend(words[len(watermark):])
+    return ' '.join(encoded)
+def decode_zerowidth(encoded_text):
+    zero = '\u200B'
+    one = '\u200C'
+    words = encoded_text.split()
+    bits = []
+    for word in words:
+        if word.endswith(zero):
+            bits.append('0')
+        elif word.endswith(one):
+            bits.append('1')
+    return ''.join(bits)
+# Файл таңдау терезесі
+def choose_file():
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename(
+        title="Мәтіндік файлды таңдаңыз",
+        filetypes=[("Text Files", "*.txt")]
+    )
+    return file_path
+# Негізгі логика
+def main():
+    file_path = choose_file()
+    if not file_path:
+        print(" Файл таңдалмады.")
+        return
+    with open(file_path, 'r', encoding='utf-8') as file:
+        original_text = file.read()
+    print(" Мәтін оқылды.")
+    watermark = input("Су таңбаны енгіз (мысалы: 11001001):\n>>> ")
+    if not all(c in '01' for c in watermark):
+        print(" Қате: су таңба тек 0 және 1 цифрларынан тұруы керек!")
+        return
+    print("\nӘдісті таңдаңыз:")
+    print("1 — Сызықтық әдіс (бос орынмен)")
+    print("2 — Zero-width әдісі (Unicode таңбалар)")
+    method = input(">>> ")
+    try:
+        if method == '1':
+            encoded = encode_whitespace(original_text, watermark)
+            decoded = decode_whitespace(encoded)
+            print("\n Сызықтық әдіспен кодтау аяқталды.")
+        elif method == '2':
+            encoded = encode_zerowidth(original_text, watermark)
+            decoded = decode_zerowidth(encoded)
+            print("\n Zero-width әдіспен кодтау аяқталды.")
+        else:
+            print("Қате: әдіс дұрыс таңдалмады.")
+            return
+        with open("encoded_output.txt", 'w', encoding='utf-8') as f:
+            f.write(encoded)
+        print(" Қалпына келтірілген су таңба:", decoded)
+        print(" Кодталған мәтін 'encoded_output.txt' файлына сақталды.")
+    except ValueError as e:
+        print(f" Қате: {e}")
+if __name__ == "__main__":
+    main()
