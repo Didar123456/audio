@@ -1,0 +1,70 @@
+from tkinter import Tk, filedialog
+from PIL import Image
+import numpy as np
+# Функция для выбора изображения с помощью диалогового окна
+def choose_image():
+    root = Tk()
+    root.withdraw()  # Скрываем основное окно
+    image_path = filedialog.askopenfilename(title="Выберите изображение", filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg;*.jpeg"), ("All files", "*.*")])
+    return image_path
+# 1. Выбор изображения
+image_path = choose_image()
+if not image_path:
+    print("Изображение не выбрано!")
+    exit()
+# Выводим путь к выбранному изображению
+print(f"Вы выбрали файл: {image_path}")
+# 2. Загружаем изображение
+image = Image.open(image_path)
+# 3. Преобразуем изображение в массив пикселей
+image_data = np.array(image)
+# 4. Выводим размеры изображения
+height, width, channels = image_data.shape
+print(f"Суреттің өлшемі: {width} x {height}")
+# 5. Устанавливаем размер блока
+block_size = 4
+# 6. Разбиваем изображение на блоки
+blocks = []
+for i in range(0, height, block_size):
+    for j in range(0, width, block_size):
+        block = image_data[i:i+block_size, j:j+block_size]
+        blocks.append(block)
+# 7. Функция для вычисления дисперсии
+def calculate_dispersion(block):
+    block_flat = block.flatten()
+    return np.sum(np.abs(np.diff(block_flat)))
+# 8. Вычисляем дисперсию для каждого блока
+dispersion_values = [calculate_dispersion(block) for block in blocks]
+# 9. Выводим дисперсию первых 10 блоков
+print(f"Дисперсия блоков: {dispersion_values[:10]}")
+# 10. Классификация блоков по дисперсии
+def classify_block(dispersion_value, threshold=0.5):
+    if dispersion_value > threshold:
+        return 'R'  # Regular
+    elif dispersion_value < threshold:
+        return 'S'  # Singular
+    else:
+        return 'U'  # Unusable
+# 11. Классифицируем все блоки
+classified_blocks = [classify_block(d) for d in dispersion_values]
+# 12. Подсчитываем количество блоков в каждой категории
+regular_count = classified_blocks.count('R')
+singular_count = classified_blocks.count('S')
+unusable_count = classified_blocks.count('U')
+print(f"Regular блоктар саны: {regular_count}")
+print(f"Singular блоктар саны: {singular_count}")
+print(f"Unusable блоктар саны: {unusable_count}")
+# 13. Функция для вычисления вероятности вставки информации
+def calculate_probability(regular_count, singular_count):
+    total = regular_count + singular_count
+    if total == 0:
+        return 0
+    return regular_count / total
+# 14. Вычисляем вероятность вставки информации
+probability = calculate_probability(regular_count, singular_count)
+print(f"Ақпарат енгізу ықтималдығы: {probability}")
+# 15. Делать вывод о наличии стеганографической информации
+if probability > 0.5:
+    print("Суретке стеганографиялық ақпарат енгізілген.")
+else:
+    print("Суретте стеганографиялық ақпарат жоқ.")
